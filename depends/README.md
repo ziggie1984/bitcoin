@@ -29,6 +29,7 @@ Common `host-platform-triplet`s for cross compilation are:
 - `x86_64-pc-linux-gnu` for x86 Linux
 - `x86_64-w64-mingw32` for Win64
 - `x86_64-apple-darwin` for macOS
+- `arm64-apple-darwin` for ARM macOS
 - `arm-linux-gnueabihf` for Linux ARM 32 bit
 - `aarch64-linux-gnu` for Linux ARM 64 bit
 - `powerpc64-linux-gnu` for Linux POWER 64-bit (big endian)
@@ -82,6 +83,10 @@ For linux RISC-V 64-bit cross compilation (there are no packages for 32-bit):
 For linux S390X cross compilation:
 
     sudo apt-get install g++-s390x-linux-gnu binutils-s390x-linux-gnu
+
+### Install the required dependencies: OpenBSD
+
+    pkg_add bash gtar
 
 ### Dependency Options
 

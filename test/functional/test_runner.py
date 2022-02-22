@@ -198,6 +198,7 @@ BASE_SCRIPTS = [
     'wallet_keypool.py --legacy-wallet',
     'wallet_keypool.py --descriptors',
     'wallet_descriptor.py --descriptors',
+    'feature_maxtipage.py',
     'p2p_nobloomfilter_messages.py',
     'p2p_filter.py',
     'rpc_setban.py',
@@ -320,6 +321,7 @@ BASE_SCRIPTS = [
     'rpc_getdescriptorinfo.py',
     'rpc_mempool_entry_fee_fields_deprecation.py',
     'rpc_help.py',
+    'feature_dirsymlinks.py',
     'feature_help.py',
     'feature_shutdown.py',
     'p2p_ibd_txrelay.py',
@@ -531,8 +533,11 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
 
     max_len_name = len(max(test_list, key=len))
     test_count = len(test_list)
+    all_passed = True
     i = 0
     while i < test_count:
+        if failfast and not all_passed:
+            break
         for test_result, testdir, stdout, stderr in job_queue.get_next():
             test_results.append(test_result)
             i += 1
@@ -542,6 +547,7 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
             elif test_result.status == "Skipped":
                 logging.debug("%s skipped" % (done_str))
             else:
+                all_passed = False
                 print("%s failed, Duration: %s s\n" % (done_str, test_result.time))
                 print(BOLD[1] + 'stdout:\n' + BOLD[0] + stdout + '\n')
                 print(BOLD[1] + 'stderr:\n' + BOLD[0] + stderr + '\n')
@@ -575,7 +581,7 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
     if not os.listdir(tmpdir):
         os.rmdir(tmpdir)
 
-    all_passed = all(map(lambda test_result: test_result.was_successful, test_results)) and coverage_passed
+    all_passed = all_passed and coverage_passed
 
     # Clean up dangling processes if any. This may only happen with --failfast option.
     # Killing the process group will also terminate the current process but that is

@@ -8,6 +8,7 @@
 #include <consensus/consensus.h>
 #include <consensus/validation.h>
 #include <key_io.h>
+#include <script/descriptor.h>
 #include <script/script.h>
 #include <script/standard.h>
 #include <serialize.h>
@@ -64,7 +65,7 @@ std::string FormatScript(const CScript& script)
         ret += strprintf("0x%x ", HexStr(std::vector<uint8_t>(it2, script.end())));
         break;
     }
-    return ret.substr(0, ret.size() - 1);
+    return ret.substr(0, ret.empty() ? ret.npos : ret.size() - 1);
 }
 
 const std::map<unsigned char, std::string> mapSigHashTypes = {
@@ -152,6 +153,7 @@ void ScriptPubKeyToUniv(const CScript& scriptPubKey, UniValue& out, bool include
     CTxDestination address;
 
     out.pushKV("asm", ScriptToAsmStr(scriptPubKey));
+    out.pushKV("desc", InferDescriptor(scriptPubKey, DUMMY_SIGNING_PROVIDER)->ToString());
     if (include_hex) out.pushKV("hex", HexStr(scriptPubKey));
 
     std::vector<std::vector<unsigned char>> solns;
