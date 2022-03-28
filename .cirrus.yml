@@ -2,6 +2,7 @@ env:  # Global defaults
   PACKAGE_MANAGER_INSTALL: "apt-get update && apt-get install -y"
   MAKEJOBS: "-j10"
   TEST_RUNNER_PORT_MIN: "14000"  # Must be larger than 12321, which is used for the http cache. See https://cirrus-ci.org/guide/writing-tasks/#http-cache
+  CI_FAILFAST_TEST_LEAVE_DANGLING: "1"  # Cirrus CI does not care about dangling process and setting this variable avoids killing the CI script itself on error
   CCACHE_SIZE: "200M"
   CCACHE_DIR: "/tmp/ccache_dir"
   CCACHE_NOHASHDIR: "1"  # Debug info might contain a stale path if the build dir changes, but this is fine
@@ -82,7 +83,7 @@ task:
   env:
     PATH: 'C:\jom;C:\Python39;C:\Python39\Scripts;C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin;%PATH%'
     PYTHONUTF8: 1
-    CI_VCPKG_TAG: '2021.05.12'
+    CI_VCPKG_TAG: '2022.02.23'
     VCPKG_DOWNLOADS: 'C:\Users\ContainerAdministrator\AppData\Local\vcpkg\downloads'
     VCPKG_DEFAULT_BINARY_CACHE: 'C:\Users\ContainerAdministrator\AppData\Local\vcpkg\archives'
     QT_DOWNLOAD_URL: 'https://download.qt.io/official_releases/qt/5.15/5.15.2/single/qt-everywhere-src-5.15.2.zip'
@@ -130,6 +131,7 @@ task:
     reupload_on_changes: true
     fingerprint_script:
       - echo %CI_VCPKG_TAG%
+      - type build_msvc\vcpkg.json
       - msbuild -version
     populate_script:
       - mkdir %VCPKG_DEFAULT_BINARY_CACHE%
@@ -195,7 +197,7 @@ task:
     FILE_ENV: "./ci/test/00_setup_env_i686_centos.sh"
 
 task:
-  name: '[previous releases, uses qt5 dev package and some depends packages, DEBUG] [unsigned char] [bionic]'
+  name: '[previous releases, uses qt5 dev package and some depends packages, DEBUG] [unsigned char] [buster]'
   previous_releases_cache:
     folder: "releases"
   << : *GLOBAL_TASK_TEMPLATE
@@ -258,13 +260,13 @@ task:
     FILE_ENV: "./ci/test/00_setup_env_i686_multiprocess.sh"
 
 task:
-  name: '[no wallet] [bionic]'
+  name: '[no wallet, libbitcoinkernel] [bionic]'
   << : *GLOBAL_TASK_TEMPLATE
   container:
     image: ubuntu:bionic
   env:
     << : *CIRRUS_EPHEMERAL_WORKER_TEMPLATE_ENV
-    FILE_ENV: "./ci/test/00_setup_env_native_nowallet.sh"
+    FILE_ENV: "./ci/test/00_setup_env_native_nowallet_libbitcoinkernel.sh"
 
 task:
   name: 'macOS 10.15 [gui, no tests] [focal]'
@@ -287,7 +289,7 @@ task:
   << : *GLOBAL_TASK_TEMPLATE
   macos_instance:
     # Use latest image, but hardcode version to avoid silent upgrades (and breaks)
-    image: monterey-xcode-13.2  # https://cirrus-ci.org/guide/macOS
+    image: monterey-xcode-13.3  # https://cirrus-ci.org/guide/macOS
   env:
     << : *CIRRUS_EPHEMERAL_WORKER_TEMPLATE_ENV
     CI_USE_APT_INSTALL: "no"

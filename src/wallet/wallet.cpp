@@ -354,6 +354,11 @@ std::shared_ptr<CWallet> CreateWallet(WalletContext& context, const std::string&
     // Write the wallet settings
     UpdateWalletSetting(*context.chain, name, load_on_start, warnings);
 
+    // Legacy wallets are being deprecated, warn if a newly created wallet is legacy
+    if (!(wallet_creation_flags & WALLET_FLAG_DESCRIPTORS)) {
+        warnings.push_back(_("Wallet created successfully. The legacy wallet type is being deprecated and support for creating and opening legacy wallets will be removed in the future."));
+    }
+
     status = DatabaseStatus::SUCCESS;
     return wallet;
 }
@@ -361,6 +366,7 @@ std::shared_ptr<CWallet> CreateWallet(WalletContext& context, const std::string&
 std::shared_ptr<CWallet> RestoreWallet(WalletContext& context, const fs::path& backup_file, const std::string& wallet_name, std::optional<bool> load_on_start, DatabaseStatus& status, bilingual_str& error, std::vector<bilingual_str>& warnings)
 {
     DatabaseOptions options;
+    ReadDatabaseArgs(*context.args, options);
     options.require_existing = true;
 
     if (!fs::exists(backup_file)) {
@@ -2691,6 +2697,10 @@ std::shared_ptr<CWallet> CWallet::Create(WalletContext& context, const std::stri
         }
         else if (nLoadWalletRet == DBErrors::TOO_NEW) {
             error = strprintf(_("Error loading %s: Wallet requires newer version of %s"), walletFile, PACKAGE_NAME);
+            return nullptr;
+        }
+        else if (nLoadWalletRet == DBErrors::EXTERNAL_SIGNER_SUPPORT_REQUIRED) {
+            error = strprintf(_("Error loading %s: External signer wallet being loaded without external signer support compiled"), walletFile);
             return nullptr;
         }
         else if (nLoadWalletRet == DBErrors::NEED_REWRITE)

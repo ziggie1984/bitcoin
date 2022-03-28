@@ -45,7 +45,7 @@ struct CTxMemPoolModifiedEntry {
         nSigOpCostWithAncestors = entry->GetSigOpCostWithAncestors();
     }
 
-    int64_t GetModifiedFee() const { return iter->GetModifiedFee(); }
+    CAmount GetModifiedFee() const { return iter->GetModifiedFee(); }
     uint64_t GetSizeWithAncestors() const { return nSizeWithAncestors; }
     CAmount GetModFeesWithAncestors() const { return nModFeesWithAncestors; }
     size_t GetTxSize() const { return iter->GetTxSize(); }
@@ -132,7 +132,6 @@ private:
     std::unique_ptr<CBlockTemplate> pblocktemplate;
 
     // Configuration parameters for the block size
-    bool fIncludeWitness;
     unsigned int nBlockMaxWeight;
     CFeeRate blockMinFeeRate;
 
