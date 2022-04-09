@@ -162,13 +162,17 @@ desirable for building Bitcoin Core release binaries."
 (define (make-gcc-with-pthreads gcc)
   (package-with-extra-configure-variable gcc "--enable-threads" "posix"))
 
+(define (make-mingw-w64-cross-gcc-vmov-alignment cross-gcc)
+  (package-with-extra-patches cross-gcc
+    (search-our-patches "vmov-alignment.patch")))
+
 (define (make-mingw-pthreads-cross-toolchain target)
   "Create a cross-compilation toolchain package for TARGET"
   (let* ((xbinutils (cross-binutils target))
          (pthreads-xlibc mingw-w64-x86_64-winpthreads)
          (pthreads-xgcc (make-gcc-with-pthreads
                          (cross-gcc target
-                                    #:xgcc (make-ssp-fixed-gcc base-gcc)
+                                    #:xgcc (make-ssp-fixed-gcc (make-mingw-w64-cross-gcc-vmov-alignment base-gcc))
                                     #:xbinutils xbinutils
                                     #:libc pthreads-xlibc))))
     ;; Define a meta-package that propagates the resulting XBINUTILS, XLIBC, and
@@ -197,7 +201,7 @@ chain for " target " development."))
 (define-public lief
   (package
    (name "python-lief")
-   (version "0.11.5")
+   (version "0.12.0")
    (source
     (origin
      (method git-fetch)
@@ -207,7 +211,7 @@ chain for " target " development."))
      (file-name (git-file-name name version))
      (sha256
       (base32
-       "0qahjfg1n0x76ps2mbyljvws1l3qhkqvmxqbahps4qgywl2hbdkj"))))
+       "026jchj56q25v6gc0754dj9cj5hz5zaza8ij93y5ga94w20kzm9q"))))
    (build-system python-build-system)
    (native-inputs
     `(("cmake" ,cmake)))

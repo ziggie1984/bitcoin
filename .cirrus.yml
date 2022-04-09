@@ -73,6 +73,19 @@ task:
     << : *CIRRUS_EPHEMERAL_WORKER_TEMPLATE_ENV
 
 task:
+  name: 'tidy [jammy]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: ubuntu:jammy
+    cpu: 2
+    memory: 5G
+  # For faster CI feedback, immediately schedule the linters
+  << : *CREDITS_TEMPLATE
+  env:
+    << : *CIRRUS_EPHEMERAL_WORKER_TEMPLATE_ENV
+    FILE_ENV: "./ci/test/00_setup_env_native_tidy.sh"
+
+task:
   name: "Win64 native [msvc]"
   << : *FILTER_TEMPLATE
   windows_container:
@@ -86,9 +99,11 @@ task:
     CI_VCPKG_TAG: '2022.02.23'
     VCPKG_DOWNLOADS: 'C:\Users\ContainerAdministrator\AppData\Local\vcpkg\downloads'
     VCPKG_DEFAULT_BINARY_CACHE: 'C:\Users\ContainerAdministrator\AppData\Local\vcpkg\archives'
-    QT_DOWNLOAD_URL: 'https://download.qt.io/official_releases/qt/5.15/5.15.2/single/qt-everywhere-src-5.15.2.zip'
-    QT_LOCAL_PATH: 'C:\qt-everywhere-src-5.15.2.zip'
-    QT_SOURCE_DIR: 'C:\qt-everywhere-src-5.15.2'
+    CCACHE_DIR: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+    WRAPPED_CL: 'C:\Users\ContainerAdministrator\AppData\Local\Temp\cirrus-ci-build\ci\test\wrapped-cl.bat'
+    QT_DOWNLOAD_URL: 'https://download.qt.io/official_releases/qt/5.15/5.15.3/single/qt-everywhere-opensource-src-5.15.3.zip'
+    QT_LOCAL_PATH: 'C:\qt-everywhere-opensource-src-5.15.3.zip'
+    QT_SOURCE_DIR: 'C:\qt-everywhere-src-5.15.3'
     QTBASEDIR: 'C:\Qt_static'
     x64_NATIVE_TOOLS: '"C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"'
     IgnoreWarnIntDirInTempDetected: 'true'
@@ -135,9 +150,13 @@ task:
       - msbuild -version
     populate_script:
       - mkdir %VCPKG_DEFAULT_BINARY_CACHE%
-  install_python_script:
+  ccache_cache:
+    folder: '%CCACHE_DIR%'
+  install_tools_script:
+    - choco install --yes --no-progress ccache
     - choco install --yes --no-progress python3 --version=3.9.6
     - pip install zmq
+    - ccache --version
     - python -VV
   install_vcpkg_script:
     - cd ..
@@ -149,9 +168,12 @@ task:
     - .\vcpkg integrate install
     - .\vcpkg version
   build_script:
+    - '%x64_NATIVE_TOOLS%'
     - cd %CIRRUS_WORKING_DIR%
+    - ccache --zero-stats
     - python build_msvc\msvc-autogen.py
-    - msbuild build_msvc\bitcoin.sln -property:Configuration=Release -maxCpuCount -verbosity:minimal -noLogo
+    - msbuild build_msvc\bitcoin.sln -property:CLToolExe=%WRAPPED_CL% -property:Configuration=Release -maxCpuCount -verbosity:minimal -noLogo
+    - ccache --show-stats
   unit_tests_script:
     - src\test_bitcoin.exe -l test_suite
     - src\bench_bitcoin.exe > NUL
